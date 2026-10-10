@@ -3,9 +3,20 @@ import bpy
 from ..ice_cube_selectors import GetMaterial
 from ..constants import DEFAULT_SKIN
 from ..utils import UnpackImage
+from ..Properties.enumerators import EYELASH_DEFAULT_IDENTIFIER
+
+# enums with runtime generated items can't report their default -> see get_default()
+GENERATED_ENUM_DEFAULTS = {
+    "eyelashes": EYELASH_DEFAULT_IDENTIFIER,
+}
 
 def get_default(holder, prop_name):
     prop = holder.bl_rna.properties[prop_name]
+
+    # enums whose items are generated at runtime (eyelashes) can't report their default,
+    # it is always their first item, so fall back to a hardcoded identifier
+    if prop.type == 'ENUM' and prop.default == '' and prop_name in GENERATED_ENUM_DEFAULTS:
+        return GENERATED_ENUM_DEFAULTS[prop_name]
 
     return prop.default
 

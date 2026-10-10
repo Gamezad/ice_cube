@@ -70,15 +70,27 @@ bpy.types.Object.right_leg_IK_parent = EnumProperty(
 )
 
 
+# Enums whose items are generated at runtime have to use the item *index* as default
+# (Blender doesn't accept an identifier string there), so "0" = the first item = "None".
+# Operators/reset_all.py has a matching fallback because prop.default can't report it.
+EYELASH_DEFAULT = 0
+EYELASH_DEFAULT_IDENTIFIER = '1'
+
+def eyelash_type_items(self, context):
+    """
+    Built in styles + every custom "ice_cube.eyelashes_*" collection found on the rig,
+    so a new style only has to be added to the .blend (see dev/add_eyelash_style.py).
+    """
+    from ..ice_cube_selectors import BUILTIN_EYELASH_STYLES, GetEyelashStyles
+    try:
+        return [(identifier, label, description) for identifier, label, description, _ in GetEyelashStyles(self)]
+    except Exception:
+        return [(identifier, label, description) for identifier, label, description, _ in BUILTIN_EYELASH_STYLES]
+
 bpy.types.Object.eyelashes = EnumProperty(
     name = "Eyelash Type",
-    default='1',
-    items=[
-        ('1', 'None', 'No Eyelashes'),
-        ('2', 'Standard', 'Standard Ice Cube Eyelashes'),
-        ('3', 'Andromeda', 'Andromeda Styled Eyelashes'),
-        ('4', 'Bushy', 'Bushy Eyelashes')
-    ],
+    default=EYELASH_DEFAULT,
+    items=eyelash_type_items,
     override={"LIBRARY_OVERRIDABLE"}
 )
 

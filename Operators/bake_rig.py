@@ -1,6 +1,6 @@
 import bpy
 
-from ..ice_cube_selectors import GetCollection
+from ..ice_cube_selectors import GetCollection, GetEyelashStyles
 
 class ICECUBE_BAKE_RIG(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
@@ -27,19 +27,24 @@ class ICECUBE_BAKE_RIG(bpy.types.Operator):
             delete_collections.extend(['ice_cube.steve_l','ice_cube.steve_r','ice_cube.alex_l','ice_cube.alex_r'])
             search_collections.extend(['ice_cube.thin_l','ice_cube.thin_r'])
 
-        if rig.eyelashes == '1':
-            delete_collections.extend(['ice_cube.eyelashes_default','ice_cube.eyelashes_andromeda','ice_cube.eyelashes_bushy'])
-        elif rig.eyelashes == '2':
-            delete_collections.extend(['ice_cube.eyelashes_andromeda','ice_cube.eyelashes_bushy'])
-        elif rig.eyelashes == '3':
-            delete_collections.extend(['ice_cube.eyelashes_default','ice_cube.eyelashes_bushy'])
-        elif rig.eyelashes == '4':
-            delete_collections.extend(['ice_cube.eyelashes_default','ice_cube.eyelashes_andromeda'])
+        # eyelashes: keep the selected style, delete every other one.
+        # Works for custom styles too since the list is generated from the rig's collections.
+        selected_eyelash_collection = None
+        for identifier, label, description, collection_id in GetEyelashStyles(rig):
+            if identifier == rig.eyelashes:
+                selected_eyelash_collection = collection_id
+
+        for identifier, label, description, collection_id in GetEyelashStyles(rig):
+            if collection_id and collection_id != selected_eyelash_collection:
+                delete_collections.append(collection_id)
         
         search_collections.extend(['ice_cube.head','ice_cube.body','ice_cube.face'])
         
         for collection in delete_collections:
-            for mesh in GetCollection(collections,collection).objects:
+            target_collection = GetCollection(collections,collection)
+            if not target_collection:
+                continue
+            for mesh in target_collection.objects:
                 bpy.data.objects.remove(mesh,do_unlink=True)
         
         ModifiersToApply = ["Cosmetic Lattice","Cosmetic Lattice Finger"]
